@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 
+import java.util.Random;
 import java.util.Vector;
 
 import istanbul.gamelab.ngdroid.base.BaseCanvas;
@@ -28,9 +29,10 @@ public class GameCanvas extends BaseCanvas {
     private int hiz, hizx, hizy, spritex, spritey, bulletspeed, explodeframeno;
     private int bulletx_temp, bullety_temp;
     private int sesefekti_patlama;
-  private NgMediaPlayer arkaplan_muzik;
-
-    private boolean enemyexist, exploded;
+    private int enemyspeedx,enemyspeedy,enemyx,enemyy,donmenoktasi;
+    private NgMediaPlayer arkaplan_muzik;
+    private Random enemyrnd;
+    private boolean enemyexist, exploded,donmeboolean;
 
     int touchx, touchy;//Ekranda bastigimiz yerlerin koordinatlari
 
@@ -51,7 +53,7 @@ public class GameCanvas extends BaseCanvas {
             e.printStackTrace();
 
         }
-       arkaplan_muzik=new NgMediaPlayer(root);
+        arkaplan_muzik=new NgMediaPlayer(root);
         arkaplan_muzik.load("sounds/m2.mp3");
         arkaplan_muzik.setVolume(0.5f);
         arkaplan_muzik.prepare();
@@ -101,10 +103,6 @@ public class GameCanvas extends BaseCanvas {
         bulletoffsetx2 = new Vector<>();
         bulletoffsety2 = new Vector<>();
 
-        enemyexist = true;
-        enemy = Utils.loadImage(root,"images/mainship03.png");
-        enemysrc = new Rect();
-        enemydst = new Rect();
 
         explode = Utils.loadImage(root,"images/exp2_0.png");
         explodesrc = new Rect();
@@ -112,17 +110,47 @@ public class GameCanvas extends BaseCanvas {
         explodeframeno = 0;
 
         exploded = false;//mermi patladimi?
+   // region enemy
+        enemy = Utils.loadImage(root,"images/mainship03.png");
+        enemysrc = new Rect();
+        enemydst = new Rect();
+        enemyspeedx=10;
+        enemyspeedy=0;
+        enemyx=getWidthHalf()-128;
+        enemyy=getHeight()-256;
+        enemyexist = true;
+        donmenoktasi=getWidth();
+        donmeboolean=true;
+        enemyrnd=new Random();
+
+
+        //endregion
+
+
+
     }
 
 
 
     public void update() {
-        //Log.i(TAG, "mehmet agca");
+
 
         tilesrc.set(0,0,64,64);
 
         spritex += hizx;
         spritey += hizy;
+
+        enemyx+=enemyspeedx;
+        enemyy+=enemyspeedy;
+
+
+        if(enemyx+256>getWidth()|| enemyx<0){
+            enemyspeedx=-enemyspeedx;
+
+        }
+
+
+
 
         /*for(int i=0; i < bulletx2.size(); i++)
         {
@@ -167,10 +195,32 @@ public class GameCanvas extends BaseCanvas {
             bulletdst.elementAt(i).set(bulletx2.elementAt(i), bullety2.elementAt(i), bulletx2.elementAt(i) + 32, bullety2.elementAt(i) + 32);
         }
 
+        if(donmeboolean){
+            if(enemyspeedx>0){
+
+                donmenoktasi=enemyrnd.nextInt(getWidth()-256-(enemyx+50))+enemyx;
+            }
+            else if(enemyspeedx<0){
+                donmenoktasi=enemyrnd.nextInt(enemyx);
+
+            }
+            donmeboolean=false;
+        }
+        if(enemyspeedx>0 && enemyx>donmenoktasi){
+            donmeboolean=true;
+            enemyspeedx=-enemyspeedx;
+        }
+        else if(enemyspeedx<0 && enemyx<donmenoktasi){
+            donmeboolean=true;
+            enemyspeedx=-enemyspeedx;
+
+        }
+
         if(enemyexist)
         {
             enemysrc.set(0, 0, 64, 64);
-            enemydst.set(getWidthHalf() - 128, getHeight() - 256, getWidthHalf() + 128, getHeight());
+            //enemydst.set(getWidthHalf() - 128, getHeight() - 256, getWidthHalf() + 128, getHeight());
+            enemydst.set(enemyx,enemyy,enemyx+256,enemyy+256);
         }
 
         for(int i = 0; i < bulletdst.size(); i++)
