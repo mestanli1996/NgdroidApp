@@ -7,6 +7,7 @@ import android.graphics.Rect;
 import java.util.Vector;
 
 import istanbul.gamelab.ngdroid.base.BaseCanvas;
+import istanbul.gamelab.ngdroid.core.NgMediaPlayer;
 import istanbul.gamelab.ngdroid.util.Log;
 import istanbul.gamelab.ngdroid.util.Utils;
 
@@ -27,6 +28,8 @@ public class GameCanvas extends BaseCanvas {
     private int hiz, hizx, hizy, spritex, spritey, bulletspeed, explodeframeno;
     private int bulletx_temp, bullety_temp;
     private int sesefekti_patlama;
+  private NgMediaPlayer arkaplan_muzik;
+
     private boolean enemyexist, exploded;
 
     int touchx, touchy;//Ekranda bastigimiz yerlerin koordinatlari
@@ -48,6 +51,16 @@ public class GameCanvas extends BaseCanvas {
             e.printStackTrace();
 
         }
+       arkaplan_muzik=new NgMediaPlayer(root);
+        arkaplan_muzik.load("sounds/m2.mp3");
+        arkaplan_muzik.setVolume(0.5f);
+        arkaplan_muzik.prepare();
+        arkaplan_muzik.start();
+
+        arkaplan_muzik.start();
+
+
+
         tileset = Utils.loadImage(root,"images/tilea2.png");
         tilesrc = new Rect();
         tiledst = new Rect();
