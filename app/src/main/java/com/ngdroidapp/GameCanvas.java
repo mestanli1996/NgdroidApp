@@ -13,29 +13,41 @@ import istanbul.gamelab.ngdroid.util.Utils;
 
 /**
  * Created by noyan on 24.06.2016.
- * Nitra Games Ltd.+
+ * Nitra Games Ltd.
  */
+
 
 public class GameCanvas extends BaseCanvas {
 
-    private Bitmap tileset, spritesheet, bullet;
-    private Rect tilesrc, tiledst, spritesrc, spritedst, bulletsrc, bulletdst;
+    private Bitmap tileset, spritesheet, bullet, enemy, explode;
+    private Rect tilesrc, tiledst, spritesrc, spritedst, bulletsrc, enemysrc, enemydst, explodesrc, explodedst;
 
     private int kareno, animasyonno, animasyonyonu, bulletoffsetx_temp, bulletoffsety_temp;
 
-    private int hiz, hizx, hizy, spritex, spritey,  bulletspeed;
+    private int hiz, hizx, hizy, spritex, spritey, bulletspeed, explodeframeno;
     private int bulletx_temp, bullety_temp;
-    public Vector <Rect> bulletdst2;
-    public Vector <Integer> bulletx2,bullety2,bulletoffsetx2,bulletoffsety2,bulletspeedx2,bulletspeedy2;
+    private int sesefekti_patlama;
+    private boolean enemyexist, exploded;
 
     int touchx, touchy;//Ekranda bastigimiz yerlerin koordinatlari
+
+    public Vector<Rect> bulletdst;
+    public Vector<Integer> bulletx2, bullety2, bulletoffsetx2, bulletoffsety2, bulletspeedx2, bulletspeedy2;
 
     public GameCanvas(NgApp ngApp) {
         super(ngApp);
     }
 
     public void setup() {
-        //Log.i(TAG, "setup");
+        Log.i(TAG, "setup");
+
+        try {
+            sesefekti_patlama = root.soundManager.load("sounds/se2.wav");
+        }
+        catch(Exception e){
+            e.printStackTrace();
+
+        }
         tileset = Utils.loadImage(root,"images/tilea2.png");
         tilesrc = new Rect();
         tiledst = new Rect();
@@ -47,22 +59,6 @@ public class GameCanvas extends BaseCanvas {
 
         bullet = Utils.loadImage(root,"images/bullet.png");
         bulletsrc = new Rect();
-        bulletdst = new Rect();
-
-
-        bulletdst2= new Vector<>();
-
-        bulletx2=new Vector<>();
-
-        bullety2=new Vector<>();
-
-        bulletspeedx2=new Vector<>();
-
-        bulletspeedy2=new Vector<>();
-
-        bulletoffsetx2=new Vector<>();
-
-        bulletoffsety2=new Vector<>();
 
         kareno=0;
 
@@ -78,38 +74,55 @@ public class GameCanvas extends BaseCanvas {
 
         bulletspeed = 0;
 
-
         bulletoffsetx_temp = 256;
         bulletoffsety_temp = 128;
 
         bulletx_temp = 0;
         bullety_temp = 0;
+
+        bulletdst = new Vector<>();
+        bulletx2 = new Vector<>();
+        bullety2 = new Vector<>();
+        bulletspeedx2 = new Vector<>();
+        bulletspeedy2 = new Vector<>();
+        bulletoffsetx2 = new Vector<>();
+        bulletoffsety2 = new Vector<>();
+
+        enemyexist = true;
+        enemy = Utils.loadImage(root,"images/mainship03.png");
+        enemysrc = new Rect();
+        enemydst = new Rect();
+
+        explode = Utils.loadImage(root,"images/exp2_0.png");
+        explodesrc = new Rect();
+        explodedst = new Rect();
+        explodeframeno = 0;
+
+        exploded = false;//mermi patladimi?
     }
 
 
 
     public void update() {
+        //Log.i(TAG, "mehmet agca");
 
         tilesrc.set(0,0,64,64);
 
         spritex += hizx;
         spritey += hizy;
 
-
-
-
-
-
-
+        /*for(int i=0; i < bulletx2.size(); i++)
+        {
+            bulletx2.set(i, bulletx2.elementAt(i) + bulletspeedx2.elementAt(i));//icindeki elemani degistirmeye calisiyoruz
+            bullety2.set(i, bullety2.elementAt(i) + bulletspeedy2.elementAt(i));
+        }*/
 
         if(spritex+256 > getWidth() || spritex < 0) {//x ekseni icin sona geldimi kontrolu
             hizx = 0;//spritex = getWidth() - 256;
-            //animasyonno = 0;//sona gelince durma animasyonu
         }
 
         if(spritey+256 > getHeight() || spritey < 0){//y ekseni icin sona geldimi kontrolu
             hizy = 0;//spritey = getHeight() -256;
-            //animasyonno = 0;//sona gelince durma animasyonu
         }
 
         if(animasyonno == 1)
@@ -134,13 +147,52 @@ public class GameCanvas extends BaseCanvas {
         spritedst.set(spritex, spritey, spritex+256, spritey+256);//Ekrana cizilecegi koordinatlar
 
         bulletsrc.set(0,0,70,70);
-        for(int i=0;i<bulletdst2.size();i++)
-        bulletdst2.elementAt(i).set(bulletx2.elementAt(i), bullety2.elementAt(i), bulletx2.elementAt(i) + 32, bullety2.elementAt(i) + 32);
+        //bulletdst.set(bulletx_temp, bullety_temp, bulletx_temp + 32, bullety_temp + 32);
+
+        for(int i=0; i < bulletx2.size(); i++)
+        {
+            bulletdst.elementAt(i).set(bulletx2.elementAt(i), bullety2.elementAt(i), bulletx2.elementAt(i) + 32, bullety2.elementAt(i) + 32);
+        }
+
+        if(enemyexist)
+        {
+            enemysrc.set(0, 0, 64, 64);
+            enemydst.set(getWidthHalf() - 128, getHeight() - 256, getWidthHalf() + 128, getHeight());
+        }
+
+        for(int i = 0; i < bulletdst.size(); i++)
+        {
+            if(enemydst.contains(bulletdst.elementAt(i))) // enemy ve bullet kesistimi kontrolu yapiliyor.
+            {
+                explodedst.set(bulletx2.elementAt(i)-64, bullety2.elementAt(i)-64, bulletx2.elementAt(i)+64, bullety2.elementAt(i)+64);
+
+                bulletdst.removeElementAt(i);
+                bulletx2.removeElementAt(i);
+                bullety2.removeElementAt(i);
+                bulletspeedx2.removeElementAt(i);
+                bulletspeedy2.removeElementAt(i);
+
+                enemyexist = false;
+                enemydst.set(0,0,0,0);
+                exploded = true;
+                root.soundManager.play(sesefekti_patlama);
+            }
+        }
+
+        explodesrc = getexplodeframe(explodeframeno);
+
+        if(exploded)
+            explodeframeno+=3;
+
+        if(explodeframeno > 15)
+        {
+            explodeframeno = 0;
+            exploded = false;
+        }
     }
 
     public void draw(Canvas canvas) {
         //Log.i(TAG, "draw");
-
 
         for (int i=0; i<getWidth(); i+=128)
         {
@@ -151,31 +203,44 @@ public class GameCanvas extends BaseCanvas {
             }
         }
 
-        for(int i=0;i<bulletx2.size();i++){
-            bulletx2.set(i,bulletx2.elementAt(i)+bulletspeedx2.elementAt(i));
-            bullety2.set(i,bullety2.elementAt(i)+bulletspeedy2.elementAt(i));
-             if(bulletx2.elementAt(i)>getWidth()||bulletx2.elementAt(i)<0|| bullety2.elementAt(i)>getHeight()||bullety2.elementAt(i)<0){
-                 bulletx2.removeElementAt(i);
-                 bullety2.removeElementAt(i);
-                 bulletdst2.removeElementAt(i);
-                 bulletspeedx2.removeElementAt(i);
-                 bulletspeedy2.removeElementAt(i);
-             }
+        for(int i=0; i < bulletx2.size(); i++)
+        {
+            bulletx2.set(i, bulletx2.elementAt(i) + bulletspeedx2.elementAt(i));//icindeki elemani degistirmeye calisiyoruz
+            bullety2.set(i, bullety2.elementAt(i) + bulletspeedy2.elementAt(i));
 
-           Log.i("Control",String.valueOf(bulletx2.size()));
+            if(bulletx2.elementAt(i) > getWidth() || bulletx2.elementAt(i) < 0 || bullety2.elementAt(i) > getHeight() || bullety2.elementAt(i) < 0)//Mermiler ekran disina ciktiysa silebiliriz.
+            {
+                bulletx2.removeElementAt(i);
+                bullety2.removeElementAt(i);
+                //bulletoffsetx2.removeElementAt(i);
+                //bulletoffsety2.removeElementAt(i);
+                bulletdst.removeElementAt(i);
+                bulletspeedx2.removeElementAt(i);
+                bulletspeedy2.removeElementAt(i);
+            }
+            //Log.i("Control: ", String.valueOf(bulletx2.size()));
         }
-
-
 
         canvas.drawBitmap(spritesheet,spritesrc,spritedst,null);
 
-        for(int i=0;i<bulletdst2.size();i++){
+        //canvas.drawBitmap(bullet,bulletsrc,bulletdst,null);
 
-            canvas.drawBitmap(bullet,bulletsrc,bulletdst2.elementAt(i),null);
+        for(int i = 0; i < bulletdst.size(); i++)
+            canvas.drawBitmap(bullet,bulletsrc, bulletdst.elementAt(i),null);
 
-        }
+        if(enemyexist)
+            canvas.drawBitmap(enemy, enemysrc, enemydst, null);
 
-        canvas.drawBitmap(bullet,bulletsrc,bulletdst,null);
+        if(exploded)
+            canvas.drawBitmap(explode, explodesrc, explodedst, null);
+    }
+
+    public Rect getexplodeframe(int frameno)
+    {
+        frameno = 15-frameno;
+        Rect temp = new Rect();
+        temp.set((frameno%4)*64, (frameno/4)*64, ((frameno%4) + 1)*64, ((frameno/4) + 1)*64);//4 e bolmenin nedeni frameno 4 iken 4/4=1 yani 2. satira inmesini sagladik.
+        return temp;
     }
 
     public void keyPressed(int key) {
@@ -254,10 +319,10 @@ public class GameCanvas extends BaseCanvas {
 
             if(animasyonyonu == 0)
             {
-
                 bulletspeedx2.add(bulletspeed);
                 bulletspeedy2.add(0);
-
+                //bulletspeedx = bulletspeed;
+                //bulletspeedy = 0;
 
                 bulletoffsetx_temp = 256;
                 bulletoffsety_temp = 128;
@@ -266,28 +331,29 @@ public class GameCanvas extends BaseCanvas {
             {
                 bulletspeedx2.add(-bulletspeed);
                 bulletspeedy2.add(0);
+                //bulletspeedx = -bulletspeed;
+                //bulletspeedy = 0;
 
                 bulletoffsetx_temp = 0;
                 bulletoffsety_temp = 128;
             }
             else if(animasyonyonu == 9)
             {
-
                 bulletspeedy2.add(bulletspeed);
                 bulletspeedx2.add(0);
-
-
+                //bulletspeedy = bulletspeed;
+                //bulletspeedx = 0;
 
                 bulletoffsetx_temp = 128;
                 bulletoffsety_temp = 256;
             }
             else if(animasyonyonu == 5)
             {
-
                 bulletspeedy2.add(-bulletspeed);
                 bulletspeedx2.add(0);
-                bulletx_temp =spritex+ bulletoffsetx_temp;
-                bullety_temp =spritey+bulletoffsety_temp;
+                //bulletspeedy = -bulletspeed;
+                //bulletspeedx = 0;
+
                 bulletoffsetx_temp = 128;
                 bulletoffsety_temp = 0;
             }
@@ -295,7 +361,10 @@ public class GameCanvas extends BaseCanvas {
             bulletx2.add(spritex + bulletoffsetx_temp);
             bullety2.add(spritey + bulletoffsety_temp);
 
-            bulletdst2.add(new Rect(bulletx_temp, bullety_temp, bulletx_temp +32, bullety_temp +32));
+            bulletx_temp = spritex + bulletoffsetx_temp;
+            bullety_temp = spritey + bulletoffsety_temp;
+
+            bulletdst.add(new Rect(bulletx_temp, bullety_temp, bulletx_temp + 32, bullety_temp + 32));
         }
     }
 
@@ -322,4 +391,3 @@ public class GameCanvas extends BaseCanvas {
     }
 
 }
-
