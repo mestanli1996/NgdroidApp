@@ -8,6 +8,7 @@ import java.util.Random;
 import java.util.Vector;
 
 import istanbul.gamelab.ngdroid.base.BaseCanvas;
+import istanbul.gamelab.ngdroid.core.AppManager;
 import istanbul.gamelab.ngdroid.core.NgMediaPlayer;
 import istanbul.gamelab.ngdroid.util.Log;
 import istanbul.gamelab.ngdroid.util.Utils;
@@ -21,19 +22,22 @@ import istanbul.gamelab.ngdroid.util.Utils;
 
 public class GameCanvas extends BaseCanvas {
 
-    private Bitmap tileset, spritesheet, bullet, enemy, explode;
+    private Bitmap tileset, spritesheet, bullet, enemy, explode,laser,buttons;
     private Rect tilesrc, tiledst, spritesrc, spritedst, bulletsrc, enemysrc, enemydst, explodesrc, explodedst;
+    private Rect lasersrc, laserdst1,laserdst2;
+    private Rect restartsrc,playsrc,exitsrc,restartdst,playdst,exitdst;
 
     private int kareno, animasyonno, animasyonyonu, bulletoffsetx_temp, bulletoffsety_temp;
-
+    private int laserspeed, lasery,laserx1,laserx2;
     private int hiz, hizx, hizy, spritex, spritey, bulletspeed, explodeframeno;
     private int bulletx_temp, bullety_temp;
     private int sesefekti_patlama;
     private int enemyspeedx,enemyspeedy,enemyx,enemyy,donmenoktasi;
     private NgMediaPlayer arkaplan_muzik;
     private Random enemyrnd;
-    private boolean enemyexist, exploded,donmeboolean;
-
+    private boolean enemyexist, exploded,donmeboolean,spriteexist,guishow;
+    private long prevtime,time;
+    private boolean playshow;
     int touchx, touchy;//Ekranda bastigimiz yerlerin koordinatlari
 
     public Vector<Rect> bulletdst;
@@ -53,6 +57,17 @@ public class GameCanvas extends BaseCanvas {
             e.printStackTrace();
 
         }
+
+
+        laserspeed=48;
+        lasery =-400;
+
+         prevtime=System.currentTimeMillis();
+
+
+
+
+
         arkaplan_muzik=new NgMediaPlayer(root);
         arkaplan_muzik.load("sounds/m2.mp3");
         arkaplan_muzik.setVolume(0.5f);
@@ -60,6 +75,20 @@ public class GameCanvas extends BaseCanvas {
         arkaplan_muzik.start();
 
         arkaplan_muzik.start();
+
+        laser=Utils.loadImage(root,"images/beams1.png");
+        lasersrc=new Rect();
+        laserdst1 =new Rect();
+        laserdst2=new Rect();
+
+        buttons=Utils.loadImage(root,"images/buttons.png");
+        restartsrc=new Rect();
+        restartdst=new Rect();
+        exitdst=new Rect();
+        exitsrc=new Rect();
+        playdst=new Rect();
+        playsrc=new Rect();
+
 
 
 
@@ -119,15 +148,16 @@ public class GameCanvas extends BaseCanvas {
         enemyx=getWidthHalf()-128;
         enemyy=getHeight()-256;
         enemyexist = true;
+
         donmenoktasi=getWidth();
         donmeboolean=true;
         enemyrnd=new Random();
 
 
         //endregion
-
-
-
+        playshow=true;
+        spriteexist=true;
+        guishow=false;
     }
 
 
@@ -136,12 +166,61 @@ public class GameCanvas extends BaseCanvas {
 
 
         tilesrc.set(0,0,64,64);
+        playsrc.set(0,0,256,256);
+        playdst.set(getWidthHalf()-256,getHeightHalf()-64,getWidthHalf()-128,getHeightHalf()+64);
+        if(playshow){
 
-        spritex += hizx;
-        spritey += hizy;
+         return;
+         }
 
-        enemyx+=enemyspeedx;
-        enemyy+=enemyspeedy;
+
+
+
+       lasersrc.set(0,0,64,128);
+
+
+        restartsrc.set(256,0,512,256);
+        exitsrc.set(512,0,768,256);
+
+        restartdst.set(getWidthHalf()-64,getHeightHalf()-64,getWidthHalf()+64,getHeightHalf()+64);
+        exitdst.set(getWidthHalf()+128,getHeightHalf()-64,getWidthHalf()+256,getHeightHalf()+64);
+
+
+
+
+     time= System.currentTimeMillis();
+        if(time>prevtime+8000 && enemyexist){
+            prevtime=time;
+
+            laserx1=enemyx;
+            laserx2=enemyx+192;
+
+
+            laserdst1.set(laserx1,enemyy-128,enemyx+64,enemyy);
+            laserdst2.set(laserx2+192,enemyy-128,enemyx+256,enemyy);
+            lasery =enemyy-90;
+
+       }
+
+        lasery-=laserspeed;
+        lasersrc.set(0,0,64,128);
+        laserdst1.set(laserx1,lasery,laserx1+64,lasery+128);
+        laserdst2.set(laserx2,lasery,laserx2+64,lasery+128);
+
+        if(spritedst.intersect(laserdst1) || spritedst.intersect(laserdst2)){
+
+            spritedst.set(0,0,0,0);
+            spriteexist=false;
+            guishow=true;
+        }
+
+
+
+          spritex += hizx;
+          spritey += hizy;
+
+          enemyx+=enemyspeedx;
+          enemyy+=enemyspeedy;
 
 
         if(enemyx+256>getWidth()|| enemyx<0){
@@ -150,13 +229,6 @@ public class GameCanvas extends BaseCanvas {
         }
 
 
-
-
-        /*for(int i=0; i < bulletx2.size(); i++)
-        {
-            bulletx2.set(i, bulletx2.elementAt(i) + bulletspeedx2.elementAt(i));//icindeki elemani degistirmeye calisiyoruz
-            bullety2.set(i, bullety2.elementAt(i) + bulletspeedy2.elementAt(i));
-        }*/
 
         if(spritex+256 > getWidth() || spritex < 0) {//x ekseni icin sona geldimi kontrolu
             hizx = 0;//spritex = getWidth() - 256;
@@ -185,10 +257,16 @@ public class GameCanvas extends BaseCanvas {
             animasyonno = 0;
 
         spritesrc.set(kareno*128, animasyonyonu*128,(kareno+1)*128, (animasyonyonu+1)*128);//Resimden aldigimiz koordinatlar
-        spritedst.set(spritex, spritey, spritex+256, spritey+256);//Ekrana cizilecegi koordinatlar
+        if(spriteexist){
+
+            spritedst.set(spritex,spritey,spritex+256,spritey+256);
+
+        }
+
+
 
         bulletsrc.set(0,0,70,70);
-        //bulletdst.set(bulletx_temp, bullety_temp, bulletx_temp + 32, bullety_temp + 32);
+
 
         for(int i=0; i < bulletx2.size(); i++)
         {
@@ -227,7 +305,7 @@ public class GameCanvas extends BaseCanvas {
         {
             if(enemydst.contains(bulletdst.elementAt(i))) // enemy ve bullet kesistimi kontrolu yapiliyor.
             {
-                explodedst.set(bulletx2.elementAt(i)-64, bullety2.elementAt(i)-64, bulletx2.elementAt(i)+64, bullety2.elementAt(i)+64);
+                explodedst.set(enemyx,enemyy, enemyx+256,enemyy+256);
 
                 bulletdst.removeElementAt(i);
                 bulletx2.removeElementAt(i);
@@ -296,6 +374,25 @@ public class GameCanvas extends BaseCanvas {
 
         if(exploded)
             canvas.drawBitmap(explode, explodesrc, explodedst, null);
+
+
+        canvas.drawBitmap(laser,lasersrc,laserdst1,null);
+        canvas.drawBitmap(laser,lasersrc,laserdst2,null);
+       if(playshow){
+
+           canvas.drawBitmap(buttons,playsrc,playdst,null);
+
+       }
+
+
+       if(guishow) {
+
+           canvas.drawBitmap(buttons, restartsrc, restartdst, null);
+           canvas.drawBitmap(buttons, exitsrc, exitdst, null);
+       }
+
+
+
     }
 
     public Rect getexplodeframe(int frameno)
@@ -339,6 +436,8 @@ public class GameCanvas extends BaseCanvas {
     }
 
     public void touchUp(int x, int y) {
+
+
         if((x - touchx) > 100)//saga cektiysek
         {
             animasyonno = 1;
@@ -428,7 +527,35 @@ public class GameCanvas extends BaseCanvas {
             bullety_temp = spritey + bulletoffsety_temp;
 
             bulletdst.add(new Rect(bulletx_temp, bullety_temp, bulletx_temp + 32, bullety_temp + 32));
+
+
         }
+if(guishow) {
+
+    if (exitdst.contains(x, y)) {
+
+
+        System.exit(0);
+    }
+
+    if (restartdst.contains(x, y)) {
+        root.setup();
+
+
+    }
+
+}
+
+        if (playdst.contains(x, y)) {
+
+            playshow = false;
+
+        }
+
+
+
+
+
     }
 
 
