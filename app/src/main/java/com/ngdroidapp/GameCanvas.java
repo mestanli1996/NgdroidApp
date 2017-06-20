@@ -2,6 +2,7 @@ package com.ngdroidapp;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.Rect;
 
 import java.util.Random;
@@ -25,7 +26,8 @@ public class GameCanvas extends BaseCanvas {
     private Bitmap tileset, spritesheet, bullet, enemy, explode,laser,buttons;
     private Rect tilesrc, tiledst, spritesrc, spritedst, bulletsrc, enemysrc, enemydst, explodesrc, explodedst;
     private Rect lasersrc, laserdst1,laserdst2;
-    private Rect restartsrc,playsrc,exitsrc,restartdst,playdst,exitdst;
+    private Rect restartsrc,exitsrc,restartdst,exitdst;
+    private Rect textdst;
 
     private int kareno, animasyonno, animasyonyonu, bulletoffsetx_temp, bulletoffsety_temp;
     private int laserspeed, lasery,laserx1,laserx2;
@@ -37,7 +39,12 @@ public class GameCanvas extends BaseCanvas {
     private Random enemyrnd;
     private boolean enemyexist, exploded,donmeboolean,spriteexist,guishow;
     private long prevtime,time;
-    private boolean playshow;
+
+    private Paint textcolor;
+    private int textsize;
+    private String text;
+
+
     int touchx, touchy;//Ekranda bastigimiz yerlerin koordinatlari
 
     public Vector<Rect> bulletdst;
@@ -86,8 +93,6 @@ public class GameCanvas extends BaseCanvas {
         restartdst=new Rect();
         exitdst=new Rect();
         exitsrc=new Rect();
-        playdst=new Rect();
-        playsrc=new Rect();
 
 
 
@@ -155,9 +160,21 @@ public class GameCanvas extends BaseCanvas {
 
 
         //endregion
-        playshow=true;
+
         spriteexist=true;
         guishow=false;
+
+
+        textdst=new Rect();
+        textcolor=new Paint();
+         textcolor.setARGB(255,255,0,0);
+        textsize=64;
+        textcolor.setTextSize(textsize);
+        text="GAME OVER";
+
+        //textcolor.getTextBounds(text,0,text.length(),textdst);
+       textcolor.setTextAlign(Paint.Align.CENTER);
+
     }
 
 
@@ -166,12 +183,7 @@ public class GameCanvas extends BaseCanvas {
 
 
         tilesrc.set(0,0,64,64);
-        playsrc.set(0,0,256,256);
-        playdst.set(getWidthHalf()-256,getHeightHalf()-64,getWidthHalf()-128,getHeightHalf()+64);
-        if(playshow){
 
-         return;
-         }
 
 
 
@@ -297,26 +309,30 @@ public class GameCanvas extends BaseCanvas {
         if(enemyexist)
         {
             enemysrc.set(0, 0, 64, 64);
-            //enemydst.set(getWidthHalf() - 128, getHeight() - 256, getWidthHalf() + 128, getHeight());
+
             enemydst.set(enemyx,enemyy,enemyx+256,enemyy+256);
         }
 
         for(int i = 0; i < bulletdst.size(); i++)
         {
-            if(enemydst.contains(bulletdst.elementAt(i))) // enemy ve bullet kesistimi kontrolu yapiliyor.
+            if(enemydst.intersect(bulletdst.elementAt(i))) // enemy ve bullet kesistimi kontrolu yapiliyor.
             {
                 explodedst.set(enemyx,enemyy, enemyx+256,enemyy+256);
 
-                bulletdst.removeElementAt(i);
-                bulletx2.removeElementAt(i);
-                bullety2.removeElementAt(i);
-                bulletspeedx2.removeElementAt(i);
-                bulletspeedy2.removeElementAt(i);
+                bulletdst.removeAllElements();
+                bulletx2.removeAllElements();
+                bullety2.removeAllElements();
+                bulletspeedx2.removeAllElements();
+                bulletspeedy2.removeAllElements();
 
                 enemyexist = false;
                 enemydst.set(0,0,0,0);
                 exploded = true;
+                guishow=true;
                 root.soundManager.play(sesefekti_patlama);
+
+           guishow=true;
+
             }
         }
 
@@ -333,13 +349,14 @@ public class GameCanvas extends BaseCanvas {
     }
 
     public void draw(Canvas canvas) {
-        //Log.i(TAG, "draw");
+
 
         for (int i=0; i<getWidth(); i+=128)
         {
             for(int j=0; j<getHeight(); j+=128)
             {
                 tiledst.set(i,j,i+128,j+128);
+
                 canvas.drawBitmap(tileset,tilesrc,tiledst,null);//yesil cimen zemini  tum ekrana cizme
             }
         }
@@ -353,13 +370,12 @@ public class GameCanvas extends BaseCanvas {
             {
                 bulletx2.removeElementAt(i);
                 bullety2.removeElementAt(i);
-                //bulletoffsetx2.removeElementAt(i);
-                //bulletoffsety2.removeElementAt(i);
+
                 bulletdst.removeElementAt(i);
                 bulletspeedx2.removeElementAt(i);
                 bulletspeedy2.removeElementAt(i);
             }
-            //Log.i("Control: ", String.valueOf(bulletx2.size()));
+
         }
 
         canvas.drawBitmap(spritesheet,spritesrc,spritedst,null);
@@ -378,15 +394,10 @@ public class GameCanvas extends BaseCanvas {
 
         canvas.drawBitmap(laser,lasersrc,laserdst1,null);
         canvas.drawBitmap(laser,lasersrc,laserdst2,null);
-       if(playshow){
-
-           canvas.drawBitmap(buttons,playsrc,playdst,null);
-
-       }
 
 
        if(guishow) {
-
+           canvas.drawText(text,getWidthHalf(),getHeightHalf()-300,textcolor);
            canvas.drawBitmap(buttons, restartsrc, restartdst, null);
            canvas.drawBitmap(buttons, exitsrc, exitdst, null);
        }
@@ -539,22 +550,12 @@ if(guishow) {
     }
 
     if (restartdst.contains(x, y)) {
-        root.setup();
+        setup();
 
 
     }
 
 }
-
-        if (playdst.contains(x, y)) {
-
-            playshow = false;
-
-        }
-
-
-
-
 
     }
 
